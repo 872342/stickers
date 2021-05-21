@@ -1,0 +1,59 @@
+
+#authinput{
+    text-align: center;
+    display: flex;
+}
+#auth{
+    padding-left: 10px;
+    margin-right: 10px;
+}
+#authbtn{
+    flex-grow: 1;
+}
+#validated{
+    background-color: yellow;
+    color: blueviolet;
+    text-align: center;
+    padding: 10px;
+    display:none;
+}
+#invalid{
+    background-color: red;
+    color: black;
+    text-align: center;
+    padding: 10px;
+    display:none;
+}
+#dropper{
+    display: none;
+}
+#codeblock{
+    max-width:398px;
+    border: 1px solid black;
+    overflow: scroll;
+    max-height: 250px;
+    min-height: 152px;
+    -ms-overflow-style: none;
+    scrollbar-width: none; 
+    margin-left: auto;
+    margin-right: auto;
+}
+#codeblock::-webkit-scrollbar {
+    display: none;
+}
+#outercode{
+    display: none;
+}
+#mydropzone{
+    max-width: 400px;
+    margin-left: auto;
+    margin-right: auto;
+}
+#box{
+    text-align: center;
+}
+#stickertitle{
+    display: none;
+    text-align: left;
+}
+body{max-width: 327;}

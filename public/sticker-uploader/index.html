@@ -1,0 +1,223 @@
+<html>
+  <head>
+    <script src="dropzone.min.js"></script>
+    <link rel="stylesheet" href="dropzone.min.css"></link>
+    <link rel="stylesheet" href="style.css"></link>
+    <title>sticker uploader</title>
+  </head>
+    <body>
+<div id="validated">
+  ur valid :-)
+</div>
+<div id="invalid">
+  not valid :-(
+</div>
+    <div id="authinput">
+      <input type="text" id="AUTH" placeholder="auth token (sent to matrix)">
+      <button id="authbtn">submit</button>
+    </div>
+
+    <div id="stickertitle">
+      <label for="title">Title:</label><input id="title" type="text" placeholder="my-sticker-pack-327">
+    </div>
+    
+    <div class="clsbox-1" runat="server" id="dropper"  >
+      <!-- <input type="hidden" name="id"> -->
+      <div class="dropzone clsbox" id="mydropzone"></div>
+    </div>
+
+    <div id="outercode">
+      <label for="codeblock">sticker pack object</label>
+      <div id="codeblock">
+      <pre><code id="output"></code></pre>
+      </div>
+      <button id="upload">post</button>
+      <span id="postmsg"></span>
+    </div>
+
+<script>
+Dropzone.autoDiscover = false;
+let authtoken = ""
+let user;
+let validated=false
+let input = document.getElementById('AUTH')
+let files = document.getElementById('files')
+let valid = document.getElementById('validated')
+let invalid = document.getElementById('invalid')
+let output = document.getElementById('output')
+let title = "mystickerpack"
+//submit auth button
+document.getElementById('authbtn').addEventListener('click',()=>{
+  whoAmI(input.value)
+})
+
+//post to db button
+document.getElementById('upload').addEventListener('click',()=>{
+  uploadToShobScape()
+})
+
+//sticker title/id listener
+document.getElementById('title').addEventListener('input',(e)=>{
+  title = document.getElementById('title').value
+  title = title.replace(/[^a-z0-9]/gi,'')//only alphanumeric
+  finalJson()
+})
+
+let stickers=[]
+let finalJsonObj;
+
+
+//validate user
+const whoAmI=(token)=>{
+  function handle(res){
+    if (!res.ok) throw invalidUser()
+    return res;
+  }
+  fetch("https://matrix.org/_matrix/client/r0/account/whoami",{
+    method:'GET',
+    headers:{
+      "Authorization": `Bearer ${token}`,
+      'Content-Type': 'application/json'
+    }
+  }).then(handle)
+    .then(response => response.json())
+    .then(data =>{
+      user=data.user_id
+      authtoken=token
+      validUser()})
+    .catch(error => console.log(error));
+}
+
+//:^(
+const validUser=()=>{
+  document.getElementById('authbtn').style.display='none'
+  input.style.display='none'
+  valid.innerText=`validated as ${user} :-)`
+  validated=true
+  invalid.style.display="none"
+  valid.style.display="block"
+  document.getElementById('stickertitle').style.display="block"
+  generateDropzone(authtoken)
+}
+//:^)
+const invalidUser=()=>{
+  input.value=""
+  validated=false
+  valid.style.display="none"
+  invalid.style.display="block"
+  return "invalid user"
+}
+
+const showJsonObj=()=>{
+  document.getElementById('outercode').style.display="block"
+  document.getElementById('upload').style.display="block"
+  document.getElementById('postmsg').style.display="none"
+
+}
+const hideJsonObj=()=>{
+  document.getElementById('outercode').style.display="none"
+  document.getElementById('upload').style.display="block"
+  document.getElementById('postmsg').style.display="none"
+}
+const postResponse=()=>{
+  Dropzone.forElement("#mydropzone").removeAllFiles(true);
+  finalJsonObj=""
+  stickers=[]
+  output.textContent=""
+  document.getElementById("upload").style.display="none"
+  document.getElementById("postmsg").style.display="block"
+}
+
+//create sticker array
+const stickerObject=(mxc,file)=>{
+  let stickerItem = {}
+  stickerItem['id']=`id-${(Date.now()+Math.random()).toString(36)}`
+  stickerItem['body']="x"
+  stickerItem['url']=mxc
+  stickerItem['info']={
+    "w":file.width,
+    "h":file.height,
+    "size":file.size,
+    "mimetype": `${file.type}`,
+    "thumbnail_url": mxc,
+    "thumbnail_info":{
+      "w":64,
+      "h":64,
+      "size":file.size,
+      "mimetype": `${file.type}`,
+    }
+  }
+  stickers.push(stickerItem)
+  finalJson()
+}
+//add title/id
+const finalJson=()=>{
+  let titleid = (title==="") ? `mystickerpack-${Date.now()}`: `${title}`
+  let id = (title==="") ? `${Date.now()}` : `${title}-${Date.now()}`
+  let obj ={
+    "title": titleid,
+    "id": id,
+    "stickers":stickers
+  }
+  finalJsonObj = obj
+  output.textContent = JSON.stringify(obj, undefined, 2)
+}
+
+//post json to server as [username]
+const uploadToShobScape=()=>{
+  fetch(`/stickers`,{
+    method:'POST',
+    headers:{
+      'Accept': 'application/json',
+      'Content-Type': 'application/json'
+    },
+    body:JSON.stringify({user:user, pack:finalJsonObj}) 
+  })
+  .then(response => response.json())
+  .then(data => {
+    if('success' in data){
+      postResponse()
+      document.getElementById('postmsg').innerText=`${data.success}`
+    }
+    else{
+      postResponse()
+      document.getElementById('postmsg').innerText=`${data.error}`
+    }
+  });
+}
+
+const generateDropzone=(token)=>{
+  document.getElementById('dropper').style.display="block"
+  const myDropzone = new Dropzone("div#mydropzone", { 
+  paramName: "file",
+  url: "https://matrix.org/_matrix/media/r0/upload",
+  method: "POST",
+  autoProcessQueue: true,
+  uploadMultiple: false,
+  acceptedFiles: 'image/*',
+  headers:{
+      Authorization:`Bearer ${token}`,
+      'Cache-Control': null,
+    },
+    init: function() {
+            this.on("sending", function(file, xhr, formData) {
+              var _send = xhr.send;
+              xhr.send = function() {
+                _send.call(xhr, file);
+              }
+            });
+            this.on("success", function(file, response) {
+                stickerObject(response['content_uri'],file)
+                showJsonObj()
+            })
+        }
+  });
+}
+
+
+
+
+</script>
+</body>
+
+</html>

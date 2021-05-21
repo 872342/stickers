@@ -1,0 +1,93 @@
+<html>
+    <head>
+        <title>Home</title>
+        <style>
+            div{padding-top:10px;}
+            .black{
+                font-family: 'Courier New', Courier, monospace;
+                color:white;
+                background-color: black;
+            }
+        </style>
+    </head>
+<body>
+    hard coded to matrix.org homeserver btw :-(<br>
+    <br>
+    <label for="username">Username:</label>
+    <input id="username" type="text" placeholder="@bob:matrix.org"><br>
+
+    <div
+    >upload stickers with <b><a class="link" id="uploader" href="sticker-uploader/">uploader</a></b><br>
+    <li>Upload requires access token to validate file upload:<br></li>
+    <li>>All settings > Help & About > Access Token</li><br>
+    </div>
+        edit visible stickers with <b><a class="link" id="editor" href="sticker-editor/?user=@bob:matrix.org">editor</a></b></br>
+        <li>toggles all by default, can unset any and reload widget to remove from view</li></br>
+    </div>
+    
+    <br>embed this <b><a class="link" id="widget" href="sticker-widget/?user=@bob:matrix.org"> widget</a></b> (stickerpicker by maunium)<br>
+        <li>>Room info > Room settings > Advanced > Send Account Data </li></br>
+        <li>Event Type: <span class="black">m.widgets</span></li></br>
+        <li>Event Content:<pre class="black" id="event">
+
+        </pre></li></br>
+        
+        may need to restart element.
+    </div>
+    <div>
+        etc;</br>
+        /stickers?user=[username]&type=index</br>
+        /stickers?user=[username]&type=packs</br>
+        /stickers?user=[username]&pack=[pack id]</br>
+    </div>
+    
+<script>
+let proto = window.location.protocol
+let host = window.location.host
+let domain = `${proto}//${host}`
+let user="@bob:matrix.org"
+
+document.getElementById('event').innerText=`{
+    "stickerpicker": {
+        "content": {
+            "type": "m.stickerpicker",
+            "url": "${domain}/sticker-widget/?user=${user}&theme=$theme",
+            "name": "Stickerpicker",
+            "data": {}
+        },
+        "sender": "@you:matrix.server.name",
+        "state_key": "stickerpicker",
+        "type": "m.widget",
+        "id": "stickerpicker"
+    }
+}
+`
+
+document.getElementById('username').addEventListener('input',()=>{
+    user = document.getElementById('username').value
+    document.getElementById('editor').href=`sticker-editor/?user=${user}`
+    document.getElementById('widget').href=`sticker-widget/?user=${user}`
+    document.getElementById('event').innerText=`{
+    "stickerpicker": {
+        "content": {
+            "type": "m.stickerpicker",
+            "url": "${domain}/sticker-widget/?user=${user}&theme=$theme",
+            "name": "Stickerpicker",
+            "data": {}
+        },
+        "sender": "@you:matrix.server.name",
+        "state_key": "stickerpicker",
+        "type": "m.widget",
+        "id": "stickerpicker"
+    }
+}
+`
+
+
+
+
+})
+
+</script>
+</body>
+</html>

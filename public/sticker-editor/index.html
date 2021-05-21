@@ -1,0 +1,83 @@
+<html>
+    <head>
+        <title>sticker editor</title>
+        <style>
+            #stickerbox{
+                border:1px solid black;
+                padding:10px;
+                max-width: 327px;
+            }
+            .pack{
+                display: block;
+            }
+        </style>
+    </head>
+<body>
+
+<div id="container">
+    <div id="stickerbox"></div>
+</div>
+Doesnt remove packs from database, only from user
+<script>
+    let stickers =[]
+    const userQuery = window.location.search;
+    const urlParam = new URLSearchParams(userQuery);
+    const user = urlParam.get('user')
+
+    // returns current stickers
+    // fetch(`/stickers?user=${user}&type=index`)
+    // .then(response => response.json())
+    // .then(data =>{console.log(data);
+    //     if('error' in data){document.getElementById('stickerbox').innerText=data.error}
+    //     else displayStickers(data,true)
+    // })
+
+    //returns all db stickers
+    fetch(`/editstickers?user=${user}`)
+    .then(response => response.json())
+    .then(data =>{console.log(data);
+        if('error' in data){document.getElementById('stickerbox').innerText=data.error}
+        else displayStickers(data)
+    })
+    
+
+    const displayStickers=(data,current=false)=>{
+        let sb = document.getElementById('stickerbox')
+        sb.innerText="toggle stickers you want"
+        for(let e of data){
+            stickers.push(e.id)
+            let parent = document.createElement('label')
+            let entry = document.createElement('input');
+            entry.type="checkbox";
+            entry.checked=true;
+            entry.value=e.id
+            parent.className="pack";
+            parent.innerText=e.title;
+            parent.appendChild(entry)
+            sb.appendChild(parent)
+        }
+        let checkboxes = document.querySelectorAll("input[type='checkbox']")
+        for(let i=0;i<checkboxes.length;i++){
+            checkboxes[i].addEventListener('click',()=>{
+                if(checkboxes[i].checked) stickers.push(checkboxes[i].value)
+                else stickers = stickers.filter(e=>e!==checkboxes[i].value)
+                console.log(stickers)
+            })
+        }
+        let btn = document.createElement('button');btn.innerText="update";document.getElementById('container').appendChild(btn)
+        btn.addEventListener('click',()=>{
+            //console.log("sending", stickers)
+
+            fetch('/updatestickers',{
+                method:'POST',
+                headers:{'Content-Type': 'application/json'},
+                body:JSON.stringify({user:user,stickers:stickers})
+            })
+            .then(response => response.json())
+            .then(data =>{console.log(data)})
+        })
+    }
+
+</script>
+</body>
+</html>
