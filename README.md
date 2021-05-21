@@ -11,4 +11,4 @@ cd stickers
 npm install  
 node server  
 
-visit https://localhost:3000/
+visit http://localhost:3000/
