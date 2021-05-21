@@ -11,8 +11,8 @@ cd stickers
 npm install  
 node server  
 
-to run in background: 
-npm install pm2 -g  
-pm2 start server.js
+to run in background:   
+npm install pm2 -g    
+pm2 start server.js  
 
 visit http://localhost:3000/
