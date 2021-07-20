@@ -4,15 +4,23 @@ const cors = require('cors');
 app.use(cors());
 app.disable('x-powered-by')
 
+const fs = require('fs');
+const path = require('path');
+
 app.use(express.static('public'));
 const port = 3000;
-const path = require('path');
 
 const favicon = require('serve-favicon');
 app.use(favicon(__dirname + '/public/assets/favicon.ico'));
 
-app.use(express.urlencoded({ extended: true }));
-app.use(express.json());
+app.use(express.urlencoded({limit: '500mb', extended: true }));
+app.use(express.json({limit: '500mb', extended: true}));
+
+
+
+
+
+
 
 //db stuff
 const low = require('lowdb')
@@ -21,7 +29,6 @@ const { send } = require('process');
 const adapter = new FileSync('./db/stickers.json')
 const db = low(adapter)
 const users = db.get('users')
-const packs = db.get('packs')
 
 
 //pages
@@ -36,20 +43,24 @@ app.get('/sticker-editor'+__dirname, (req,res)=>{
 });
 
 
-
 const getUserData=(user,type)=>{
     if(type=="index") return users.find({id:user}).get(type).value()
     if(type=="packs"){
        let userpacks = users.find({id:user}).get('index').get('packs').value()
-       return packs.filter(e=>userpacks.includes(e.id))
+       //return packs.filter(e=>userpacks.includes(e.id))
+       return userpacks
     }
     return {"error":"invalid type"}
 }
 const getUserPack=(user,packname)=>{
+
     //check userpacks for pack
     let userpacks = users.find({id:user}).get('index').get('packs').value()
-    //search packs for pack
-    if(userpacks!==undefined) return packs.find(e=>e.id===packname)
+    if(userpacks!==undefined){
+        const files = fs.readdirSync('packs/')
+        let packdata = files.find(e=>path.parse(e).name===packname)
+        if(packdata) return fs.readFileSync(`packs/${packname}.json`,'utf-8')   
+    }
     else return {"error":"no pack"}    
 }
 
@@ -67,14 +78,15 @@ const tryUser =(user)=>{
 const tryData=(user,pack)=>{
     let userpacks = users.find({id:user}).get('index').get('packs').value()
    if(!userpacks.length){//if pack empty, just add
-    packs.push(pack).write()
+    fs.writeFileSync(`packs/${pack.id}.json`, JSON.stringify(pack))
     users.find({id:user}).get('index').get('packs').push(pack.id).write()
     return {"success":`added ${pack.title}`}
    }
    else{//else check if pack already exists
        let packid = userpacks.find(e=>e.id===pack.id)
        if(packid===undefined){
-           packs.push(pack).write()
+           //packs.push(pack).write()
+           fs.writeFileSync(`packs/${pack.id}.json`, JSON.stringify(pack))
            users.find({id:user}).get('index').get('packs').push(pack.id).write()
            return {"success":`added ${pack.title}`}
         }
@@ -83,24 +95,26 @@ const tryData=(user,pack)=>{
 }
 
 
-
-
-
-
-
 //editing stickers
 const editStickers=(user)=>{
     if(!user || user == 'null' ) return {"error":"provide user to edit aka /?user=@bob:matrix.org"}
     else if(users.find({id:user}).value()===undefined) return {"error":"this user has no stickers"}
     else{
-        return packs
+        //bundle all stickerpacks and send
+        let allPacks = []
+        const files = fs.readdirSync('packs/')
+        files.forEach((file)=>{
+            console.log(file)
+            let data = fs.readFileSync(`packs/${file}`,'utf-8')
+            allPacks.push(JSON.parse(data))
+        })
+        return allPacks
     }
 }
 app.get('/editstickers',(req,res)=>{
     const user = req.query.user;
-    res.send(editStickers(user))
+    res.json(editStickers(user))
 })
-
 
 
 //update user stickerpacks
@@ -113,8 +127,6 @@ app.post('/updatestickers',(req,res)=>{
     const data = req.body
     res.send(updateStickers(data.user,data.stickers))
 })
-
-
 
 
 app.get('/stickers',(req,res)=>{

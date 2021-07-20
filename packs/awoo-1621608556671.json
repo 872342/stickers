@@ -1,0 +1,24 @@
+{
+      "title": "awoo",
+      "id": "awoo-1621608556671",
+      "stickers": [
+        {
+          "id": "id-koyfv55q.n29",
+          "body": "x",
+          "url": "mxc://matrix.org/LXPrRgzYMZtjnYoYKybNudmV",
+          "info": {
+            "w": 126,
+            "h": 128,
+            "size": 28883,
+            "mimetype": "image/png",
+            "thumbnail_url": "mxc://matrix.org/LXPrRgzYMZtjnYoYKybNudmV",
+            "thumbnail_info": {
+              "w": 64,
+              "h": 64,
+              "size": 28883,
+              "mimetype": "image/png"
+            }
+          }
+        }
+      ]
+    }
