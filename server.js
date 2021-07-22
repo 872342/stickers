@@ -103,10 +103,16 @@ const editStickers=(user)=>{
         //bundle all stickerpacks and send
         let allPacks = []
         const files = fs.readdirSync('packs/')
+
+        console.log(usersEnabled = users.find({id:user}).get('index').get('packs').value())
         files.forEach((file)=>{
-            console.log(file)
-            let data = fs.readFileSync(`packs/${file}`,'utf-8')
-            allPacks.push(JSON.parse(data))
+            //console.log(file)
+            let data = JSON.parse(fs.readFileSync(`packs/${file}`,'utf-8'))
+            let usersEnabled = users.find({id:user}).get('index').get('packs').value()
+            if(usersEnabled.includes(data['id'])){
+                data['checked']=true
+            }else data['checked']=false
+            allPacks.push(data)
         })
         return allPacks
     }

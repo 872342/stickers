@@ -10,6 +10,16 @@
             .pack{
                 display: block;
             }
+            #preview{max-width: 600px;}
+            .previewImg{
+                max-width: 64px;
+                max-height: 64px;
+                position: sticky;
+            }
+            .previewSubdiv{
+                display: inline-block;
+                margin: 2px;
+            }
         </style>
     </head>
 <body>
@@ -18,56 +28,113 @@
     <div id="stickerbox"></div>
 </div>
 Doesnt remove packs from database, only from user
+
+<div id='preview'></div>
 <script>
+    let HOMESERVER = "https://matrix.org";
+    let DATA;
     let stickers =[]
     const userQuery = window.location.search;
     const urlParam = new URLSearchParams(userQuery);
     const user = urlParam.get('user')
 
-    // returns current stickers
-    // fetch(`/stickers?user=${user}&type=index`)
-    // .then(response => response.json())
-    // .then(data =>{console.log(data);
-    //     if('error' in data){document.getElementById('stickerbox').innerText=data.error}
-    //     else displayStickers(data,true)
-    // })
-
     //returns all db stickers
     fetch(`/editstickers?user=${user}`)
     .then(response => response.json())
-    .then(data =>{console.log(data);
+    .then(data =>{console.log(data);DATA = data;
         if('error' in data){document.getElementById('stickerbox').innerText=data.error}
         else displayStickers(data)
     })
     
-
     const displayStickers=(data,current=false)=>{
         let sb = document.getElementById('stickerbox')
         sb.innerText="toggle stickers you want"
         for(let e of data){
-            stickers.push(e.id)
-            let parent = document.createElement('label')
+            //stickers.push(e.id)
+            let parent = document.createElement('a');parent['href']='#'
             let entry = document.createElement('input');
             entry.type="checkbox";
-            entry.checked=true;
+            if(e.checked){//toggle packs already enabled
+                entry.checked=true;
+                stickers.push(e.id)
+            }
             entry.value=e.id
             parent.className="pack";
             parent.innerText=e.title;
+            parent.dataset.packid = e.id
             parent.appendChild(entry)
             sb.appendChild(parent)
         }
+
         let checkboxes = document.querySelectorAll("input[type='checkbox']")
-        for(let i=0;i<checkboxes.length;i++){
-            checkboxes[i].addEventListener('click',()=>{
-                if(checkboxes[i].checked) stickers.push(checkboxes[i].value)
-                else stickers = stickers.filter(e=>e!==checkboxes[i].value)
-                console.log(stickers)
+        for(let checkbox of checkboxes){
+            checkbox.addEventListener('click',()=>{
+                console.log(checkbox)
+                if(checkbox.checked) stickers.push(checkbox.value)
+                else stickers = stickers.filter(e=>e!==checkbox.value)
             })
         }
+
+
+
+        const generatePreview = (pack) =>{
+            function matrixToImg(uri){
+                let url = uri.replace('mxc://', `${HOMESERVER}/_matrix/media/r0/thumbnail/`)
+                return `${url}?width=32&height=32&method=scale`
+            }
+            const previewDiv = document.getElementById('preview')
+            console.log(pack)
+            previewDiv.innerHTML=''
+            for(sticker of pack.stickers){
+                let subdiv = document.createElement('div')
+                subdiv.className='previewSubdiv'
+                let child = document.createElement('img')
+                child.className='previewImg'
+                child.src = matrixToImg(sticker.url)
+                subdiv.appendChild(child)
+                previewDiv.appendChild(subdiv)
+            }
+
+            //add listeners to  img
+            let imgs = document.querySelectorAll('img')
+            for(const i of imgs){
+                //console.log(a)
+                i.addEventListener('mouseenter',()=>{
+                    console.log(i)
+                    i.style.transform='scale(2)'
+                    i.style.zIndex='100'
+                    i.style.border='1px solid black'
+                    i.style.backgroundColor='cadetblue'
+                    i.style.float='right'
+                })
+                i.addEventListener('mouseleave',()=>{
+                    console.log(i)
+                    i.style.transform='scale(1)'
+                    i.style.zIndex='1'
+                    i.style.removeProperty('border')
+                    i.style.removeProperty('float')
+                    i.style.removeProperty('background-color')
+                })
+
+            }
+            
+            
+        }
+
+        let ahrefs = document.querySelectorAll('a')
+        for(const a of ahrefs){
+            //console.log(a)
+            a.addEventListener('click',()=>{//click a[href] to toggle sticker preview
+                console.log(a)
+                let packid = a.dataset.packid
+                for(let pack of DATA){
+                    if(pack.id == packid) generatePreview(pack)
+                }
+            })
+        }
+
         let btn = document.createElement('button');btn.innerText="update";document.getElementById('container').appendChild(btn)
         btn.addEventListener('click',()=>{
-            //console.log("sending", stickers)
-
             fetch('/updatestickers',{
                 method:'POST',
                 headers:{'Content-Type': 'application/json'},
